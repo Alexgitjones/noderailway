@@ -13,7 +13,27 @@
     const axios = require('axios');
     const fs = require('fs');
     const ffmpeg = require('fluent-ffmpeg');
-
+    const nodemailer = require("nodemailer");
+    const transporter = nodemailer.createTransport({
+        host: 'mail.ugcstocks.com',
+        port: 587,
+        auth: {
+            user: 'support@ugcstocks.com',
+            pass: 'ep6!@u38v'
+        }
+    });  
+    
+    async function sendmail(msg,email){
+        const info = await transporter.sendMail({
+            from: '"UGC Stocks" <support@ugcstocks.com>', // sender address
+            to: email, // list of receivers
+            subject: "UGC Stocks Notification", // Subject line
+            // text: "Hello world?", // plain text body
+            html: msg, // html body
+        });
+        return info.messageId;
+    }
+      
     app.use(bodyParser.json());
     app.use(cors())
     // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -272,6 +292,15 @@
         const session = await stripe.checkout.sessions.retrieve(
             session_id
         );
+        const get_user = 'SELECT Email FROM Users WHERE UserID = ?';
+        connection.query(get_user, [id], (err, result) => {
+            var Email_msg = '<strong>You have been Purchased our Subscription Successfully<br>Thank you for being a valued member of our Community.<strong>'
+            const getsendmsg = sendmail(Email_msg,result[0].Email)
+            getsendmsg.then((msg) => {
+                // console.log(msg)
+            })
+        });
+       
         const getprev_user = 'SELECT transactionobject FROM Transaction WHERE UserID = ?';
         connection.query(getprev_user, [id], (err, result) => {
             if(result.length > 0){
@@ -574,7 +603,16 @@
         });
     });
 
+
     app.get('/', async (req, res) => {
+        // const get_user = 'SELECT Email FROM Users WHERE UserID = ?';
+        // connection.query(get_user, [52], (err, result) => {
+        //     var Email_msg = '<strong>You have been Purchased our Subscription Successfully<br>Thank you for being a valued member of our Community.<strong>'
+        //     const getsendmsg = sendmail(Email_msg,result[0].Email)
+        //     getsendmsg.then((msg) => {
+        //         console.log(msg)
+        //     })
+        // });
         res.send('hello world')
     });
 
